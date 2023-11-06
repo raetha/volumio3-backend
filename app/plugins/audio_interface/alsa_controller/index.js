@@ -1483,9 +1483,9 @@ ControllerAlsa.prototype.writeSoftMixerFile = function (data) {
     asoundcontent += '        card        ' + card + '\n';
     asoundcontent += '        device      ' + device + '\n';
     asoundcontent += '    }\n';
-    asoundcontent += 'max_dB 0.0\n';
-    asoundcontent += 'min_dB -50.0\n';
-    asoundcontent += 'resolution 100\n';
+    asoundcontent += '    max_dB 0.0\n';
+    asoundcontent += '    min_dB -50.0\n';
+    asoundcontent += '    resolution 100\n';
     asoundcontent += '}\n';
   } else {
     asoundcontent += 'pcm.softvolume {\n';
@@ -1503,9 +1503,9 @@ ControllerAlsa.prototype.writeSoftMixerFile = function (data) {
     asoundcontent += '        card        ' + data + '\n';
     asoundcontent += '        device      0\n';
     asoundcontent += '    }\n';
-    asoundcontent += 'max_dB 0.0\n';
-    asoundcontent += 'min_dB -50.0\n';
-    asoundcontent += 'resolution 100\n';
+    asoundcontent += '    max_dB 0.0\n';
+    asoundcontent += '    min_dB -50.0\n';
+    asoundcontent += '    resolution 100\n';
     asoundcontent += '}\n';
   }
 
@@ -1566,9 +1566,9 @@ ControllerAlsa.prototype.writeSoftVolContribution = function (data) {
   asoundcontent += '        card        ' + card + '\n';
   asoundcontent += '        device      ' + device + '\n';
   asoundcontent += '    }\n';
-  asoundcontent += 'max_dB 0.0\n';
-  asoundcontent += 'min_dB -50.0\n';
-  asoundcontent += 'resolution 100\n';
+  asoundcontent += '    max_dB 0.0\n';
+  asoundcontent += '    min_dB -50.0\n';
+  asoundcontent += '    resolution 100\n';
   asoundcontent += '}\n';
   
   var folder = self.commandRouter.pluginManager.getConfigurationFile(self.context, 'asound');
@@ -2157,12 +2157,50 @@ ControllerAlsa.prototype.internalUpdateALSAConfigFile = function () {
     asoundcontent += '}\n\n';
 
     asoundcontent += 'pcm.volumioHw {\n';
+    asoundcontent += '    type asym\n';
+    asoundcontent += '    playback.pcm {\n';
+    asoundcontent += '        type dmix\n';
+    asoundcontent += '        ipc_key 1024\n';
+    asoundcontent += '        ipc_key_add_uid false\n';
+    asoundcontent += '        ipc_perm 0660\n';
+    asoundcontent += '        slave {\n';
+    asoundcontent += '            pcm {\n';
+    asoundcontent += '                type hw\n';
+    asoundcontent += '                card \"' + card + '\"\n';
+    if(device != null) {
+        asoundcontent += '                device ' + device + '\n';
+    }
+    asoundcontent += '            }\n';
+    asoundcontent += '        }\n';
+    asoundcontent += '    }\n';
+    asoundcontent += '    capture.pcm {\n';
+    asoundcontent += '        type dsnoop\n';
+    asoundcontent += '        ipc_key 1025\n';
+    asoundcontent += '        ipc_key_add_uid false\n';
+    asoundcontent += '        ipc_perm 0660\n';
+    asoundcontent += '        slave {\n';
+    asoundcontent += '            pcm {\n';
+    asoundcontent += '                type hw\n';
+    asoundcontent += '                card \"' + card + '\"\n';
+    if(device != null) {
+        asoundcontent += '                device ' + device + '\n';
+    }
+    asoundcontent += '            }\n';
+    asoundcontent += '        }\n';
+    asoundcontent += '    }\n';
+    asoundcontent += '    hint {\n';
+    asoundcontent += '        show on\n';
+    asoundcontent += '        description \"Default ALSA Output\"\n';
+    asoundcontent += '    }\n';
+    asoundcontent += '}\n\n';
+
+    asoundcontent += 'ctl.!default {\n';
     asoundcontent += '    type hw\n';
     asoundcontent += '    card \"' + card + '\"\n';
     if(device != null) {
       asoundcontent += '    device ' + device + '\n';
     }
-    asoundcontent += '}\n';
+    asoundcontent += '}\n\n';
 
     return asoundcontent;
   }).then((asoundcontent) => {
