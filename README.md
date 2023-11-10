@@ -4,6 +4,9 @@
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
 [![Volumio](https://volumio.org/wp-content/uploads/2016/02/Volumio_logo_HD2000.jpg)](https://volumio.org)
 
+## Raetha Fork Details
+This fork has modifications to support Pulse Audio and ALSA dmix/dsnoop in order to allow multiple applications to play/record audio at once. It may not be compaible with the stock Volumio3-OS and may require that fork which has migrated to Debian/RaspberryPiOS Bullseye. Please do not seek assistance from the Volumio staff and community as this is unsupported.
+
 ## What is Volumio
 
 Volumio is a Free and Open Source Linux Distribution, designed and fine-tuned exclusively for music playback. It runs on a variety of devices, typically small and cheap computers like the Raspberry PI, but also on low power PCs, notebooks or thin clients.
