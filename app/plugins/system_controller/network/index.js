@@ -573,79 +573,73 @@ ControllerNetwork.prototype.saveHotspotSettings = function (data) {
 
 ControllerNetwork.prototype.rebuildHotspotConfig = function (forceHotspotConfiguration) {
   var self = this;
-  var hostapdedimax = '/etc/hostapd/hostapd-edimax.conf';
-  var hostapd = '/etc/hostapd/hostapd.conf';
+  var hotspotconf = '/etc/NetworkManager/system-connections/Hotspot.nmconnection';
   var hotspotname = config.get('hotspot_name', 'Volumio');
   var hotspotchannel = config.get('hotspot_channel', '4');
   var hotspotpassword = config.get('hotspot_password', 'volumio2');
 
-  try {
-    fs.accessSync(hostapdedimax, fs.F_OK);
-    exec('/usr/bin/sudo /bin/chmod 777 ' + hostapdedimax, {uid: 1000, gid: 1000}, function (error, stdout, stderr) {
-      if (error !== null) {
-        self.logger.error('Cannot set permissions for /etc/hostapd/hostapd-edimax.conf: ' + error);
-      } else {
-        self.logger.info('Permissions for /etc/hostapd/hostapd-edimax.conf');
-
-        try {
-          var ws = fs.createWriteStream(hostapdedimax);
-          ws.cork();
-
-          if (config.get('enable_hotspot') == true || config.get('enable_hotspot') == 'true' || forceHotspotConfiguration === true) {
-            ws.write('interface=wlan0\n');
-            ws.write('ssid=' + hotspotname + '\n');
-            ws.write('channel=' + hotspotchannel + '\n');
-            ws.write('driver=rtl871xdrv\n');
-            ws.write('hw_mode=g\n');
-            if (config.get('hotspot_protection') == true || config.get('hotspot_protection') == 'true') {
-              ws.write('auth_algs=1\n');
-              ws.write('wpa=2\n');
-              ws.write('wpa_key_mgmt=WPA-PSK\n');
-              ws.write('rsn_pairwise=CCMP\n');
-              ws.write('wpa_passphrase=' + hotspotpassword + '\n');
-            }
-          } else {
-            ws.write('# hotspot disabled\n');
-          }
-
-          ws.end();
-        } catch (err) {
-
-        }
-      }
-    });
-  } catch (e) {
-    // No /etd/hostapd/hostapd-edimax.conf
-  }
-
-  exec('/usr/bin/sudo /bin/chmod 777 ' + hostapd, {uid: 1000, gid: 1000}, function (error, stdout, stderr) {
+  exec('/usr/bin/sudo /bin/chmod 777 ' + hotspotconf, {uid: 1000, gid: 1000}, function (error, stdout, stderr) {
     if (error !== null) {
-      self.logger.error('Cannot set permissions for /etc/hostapd/hostapd.conf: ' + error);
+      self.logger.error('Cannot set permissions for ' + hostspotconf + ': ' + error);
     } else {
-      self.logger.info('Permissions for /etc/hostapd/hostapd.conf');
+      self.logger.info('Permissions for ' + hotspotconf);
 
       try {
-        var hs = fs.createWriteStream(hostapd);
+        var hs = fs.createWriteStream(hotspotconf);
         hs.cork();
 
         if (config.get('enable_hotspot') == true || config.get('enable_hotspot') == 'true' || forceHotspotConfiguration === true) {
-          hs.write('interface=wlan0\n');
-          hs.write('ssid=' + hotspotname + '\n');
+          hs.write('[connection]\n');
+          hs.write('id=Hotspot\n');
+          hs.write('uuid=cd1b678f-65c4-4c02-8000-de55b20398f9\n');
+          hs.write('type=wifi\n');
+          hs.write('autoconnect=false\n');
+          hs.write('interface-name=wlan0\n');
+          hs.write('\n');
+          hs.write('[wifi]\n');
+          hs.write('band=bg\n');
           hs.write('channel=' + hotspotchannel + '\n');
-          hs.write('driver=nl80211\n');
-          hs.write('hw_mode=g\n');
+          hs.write('mode=ap\n');
+          hs.write('ssid=' + hotspotname + '\n');
+          hs.write('\n');
           if (config.get('hotspot_protection') == true || config.get('hotspot_protection') == 'true') {
-            hs.write('auth_algs=1\n');
-            hs.write('wpa=2\n');
-            hs.write('wpa_key_mgmt=WPA-PSK\n');
-            hs.write('rsn_pairwise=CCMP\n');
-            hs.write('wpa_passphrase=' + hotspotpassword + '\n');
-          }
+            hs.write('[wifi-security]\n');
+            hs.write('group=ccmp;\n');
+            hs.write('key-mgmt=wpa-psk\n');
+            hs.write('pairwise=ccmp;\n');
+            hs.write('proto=rsn;\n');
+            hs.write('psk=' + hotspotpassword +'\n');
+            hs.write('\n');
+          } else {
+            hs.write('[wifi-security]\n');
+            hs.write('key-mgmt=none\n');
+	  }
+          hs.write('[ipv4]\n');
+          hs.write('method=shared\n');
+          hs.write('\n');
+          hs.write('[ipv6]\n');
+          hs.write('addr-gen-mode=default\n');
+          hs.write('method=ignore\n');
+          hs.write('\n');
+          hs.write('[proxy]\n');
         } else {
           hs.write('# hotspot disabled\n');
         }
 
         hs.end();
+
+        exec('/usr/bin/sudo /bin/chmod 600 ' + hotspotconf, {uid: 1000, gid: 1000}, function (error, stdout, stderr) {
+          if (error !== null) {
+            self.logger.error('Cannot set permissions for ' + hostspotconf + ': ' + error);
+          }
+        });
+
+        exec('/usr/bin/sudo /usr/bin/nmcli connection reload Hotspot ', {uid: 1000, gid: 1000}, function (error, stdout, stderr) {
+          if (error !== null) {
+            self.logger.error('Cannot reload config from ' + hostspotconf + ': ' + error);
+          }
+        });
+
         self.commandRouter.wirelessRestart();
       } catch (err) {
 
